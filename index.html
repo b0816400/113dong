@@ -1,0 +1,1403 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>뜨란채113동</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      color: #e6ecf5;
+      background: #0b1220;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      --muted: #a0aec0;
+      --line: #29374d;
+      --purple: #8b83ff;
+      --purple-light: #2c2d50;
+    }
+
+    * { box-sizing: border-box; }
+
+    body { margin: 0; min-width: 320px; }
+
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      width: min(1200px, calc(100% - 48px));
+      margin: 48px auto;
+      overflow: hidden;
+      border: 1px solid #27364d;
+      border-radius: 24px;
+      background: #121c2d;
+      box-shadow: 0 18px 60px rgb(0 0 0 / 28%);
+    }
+
+    .database-setup { max-width: 680px; margin: 0 auto; padding: 32px; }
+    .database-setup h2 { margin: 0; font-size: 22px; }
+    .database-setup > p { color: var(--muted); line-height: 1.6; }
+    .public-access-warning { padding: 12px; border: 1px solid #8a6743; border-radius: 9px; color: #ffd59b !important; background: #352b20; font-size: 13px; }
+    .database-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+    .database-actions button, .connection-bar button {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: #dce5f2;
+      background: #1a2639;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .database-actions button:disabled { cursor: wait; opacity: 0.65; }
+    .database-actions .save-button { border-color: var(--purple); color: #fff; background: #7169e8; }
+    .database-message { margin-top: 14px; color: #b4c0d2; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+    .database-message.error { color: #ff929c; }
+    .connection-bar { display: flex; align-items: center; gap: 10px; padding: 10px 24px; border-bottom: 1px solid var(--line); }
+    .connection-bar span { color: var(--muted); font-size: 12px; }
+    .connection-bar span:first-child { margin-right: auto; }
+    .connection-bar button { min-height: 34px; padding: 0 10px; font-size: 12px; }
+    .shared-import { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 16px 24px 0; padding: 12px 14px; border: 1px solid #40516b; border-radius: 10px; background: #172438; }
+    .shared-import[hidden] { display: none; }
+    .shared-import p { margin: 0; color: #dce5f2; font-size: 13px; line-height: 1.5; }
+    .shared-import-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; gap: 8px; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 28px 32px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border-radius: 13px;
+      color: #fff;
+      background: var(--purple);
+      font-size: 21px;
+    }
+    .brand h1 { margin: 0; font-size: 19px; letter-spacing: -0.5px; }
+    .brand p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+
+    .toolbar { display: flex; align-items: center; gap: 9px; }
+    .toolbar button, .add-button {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: #dce5f2;
+      background: #1a2639;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .toolbar button:hover, .add-button:hover { background: #243149; }
+    .toolbar .nav-button { width: 40px; padding: 0; font-size: 20px; }
+    .toolbar .today-button { margin-left: 4px; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .calendar-area { padding: 28px 32px 32px; }
+    .month-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin: 0 0 22px;
+    }
+    .month-heading h2 { margin: 0; font-size: 27px; letter-spacing: -1px; }
+    .month-heading span { color: var(--muted); font-size: 14px; }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+    .weekday {
+      padding: 0 0 13px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .weekday:first-child { color: #e27782; }
+    .weekday:last-child { color: #6b82cc; }
+
+    .day {
+      position: relative;
+      display: flex;
+      min-width: 0;
+      min-height: 90px;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 4px 6px;
+      border: 0;
+      border-top: 1px solid var(--line);
+      color: #dce5f2;
+      background: #121c2d;
+      text-align: center;
+    }
+    .day:hover { background: #1a2940; }
+    .day.outside { color: #66758e; }
+    #calendar-grid > .day:nth-child(7n + 1) .day-number { color: #ff929c; }
+    #calendar-grid > .day:nth-child(7n) .day-number { color: #8fb7ff; }
+    .day-number {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border-radius: 50%;
+      font-size: 13px;
+    }
+    .day.today .day-number { color: #fff; background: var(--purple); font-weight: 700; }
+    .day.selected:not(.today) .day-number { color: var(--purple); background: var(--purple-light); font-weight: 700; }
+    .day-events { display: flex; max-width: 100%; gap: 3px; margin-top: 5px; }
+    .event-dot { width: 5px; height: 5px; border-radius: 50%; background: #9b94e9; }
+    .event-count {
+      max-width: 90%;
+      overflow: hidden;
+      margin-top: 5px;
+      color: #b5afff;
+      font-size: 10px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .day-money { display: grid; gap: 2px; width: 100%; margin-top: 5px; font-size: 9px; line-height: 1.25; }
+    .day-deposit, .day-expense, .day-note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .day-income, .amount-income { color: #55d6a4; }
+    .day-expense, .amount-expense { color: #ff8792; }
+    .day-note { color: #8ec8ff; }
+    .summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin: 0 0 22px; }
+    .summary-card { min-width: 0; padding: 12px 13px; border: 1px solid var(--line); border-radius: 11px; background: #172438; }
+    .summary-card span { display: block; color: var(--muted); font-size: 11px; }
+    .summary-card strong { display: block; overflow: hidden; margin-top: 7px; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+    .summary-card.income strong { color: #55d6a4; }
+    .summary-card.expense strong { color: #ff8792; }
+    .summary-card.balance strong { color: var(--purple); }
+    .month-events-toggle { width: 100%; margin-top: 18px; }
+    .month-event-section { margin-top: 24px; scroll-margin-top: 16px; }
+    .month-event-section h2 { margin: 0 0 12px; font-size: 20px; }
+    .month-event-list { display: grid; gap: 10px; }
+    .month-event-card { padding: 12px; }
+    .month-event-date { margin: 0 0 8px; color: #b4c0d2; font-size: 12px; font-weight: 600; }
+    .month-event-section .event-kind-label { font-size: 12px; }
+    .month-event-section .event-amount,
+    .month-event-section .event-title { font-size: 14px; }
+    .month-event-section .event-notes,
+    .month-event-section .empty-state { font-size: 13px; }
+    .event-card.note { border-left-color: #8ec8ff; }
+
+    .agenda-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .agenda-header p { margin: 0 0 7px; color: var(--muted); font-size: 12px; }
+    .agenda-header h2 { margin: 0; font-size: 19px; letter-spacing: -0.5px; }
+    .add-button {
+      min-height: 34px;
+      padding: 0 11px;
+      border-color: #4a467b;
+      color: #c1bbff;
+      background: #282647;
+      white-space: nowrap;
+    }
+    .event-list { display: grid; gap: 10px; margin-top: 24px; }
+    .event-card {
+      padding: 13px 13px 12px;
+      border: 1px solid #2a384c;
+      border-left: 3px solid #ff8792;
+      border-radius: 10px;
+      background: #172438;
+    }
+    .event-card.income { border-left-color: #55d6a4; }
+    .event-kind { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .event-kind-label { color: var(--muted); font-size: 11px; }
+    .event-amount { font-size: 13px; font-weight: 700; }
+    .event-title { margin: 5px 0 0; font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+    .event-notes { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .delete-event {
+      display: block;
+      margin: 9px 0 0 auto;
+      padding: 2px 0;
+      border: 0;
+      color: #a0aec0;
+      background: transparent;
+      font-size: 11px;
+    }
+    .delete-event:hover { color: #ff8792; }
+    .empty-state { margin: 36px 0; color: #a0aec0; text-align: center; font-size: 13px; line-height: 1.7; }
+    .storage-hint { margin: 18px 0 0; color: #a0aec0; font-size: 11px; line-height: 1.5; }
+    .storage-message { margin-top: 18px; color: #ff929c; font-size: 12px; line-height: 1.5; }
+
+    dialog {
+      width: min(420px, calc(100% - 32px));
+      padding: 0;
+      border: 0;
+      border-radius: 18px;
+      color: #e6ecf5;
+      background: #142136;
+      box-shadow: 0 22px 70px rgb(0 0 0 / 55%);
+    }
+    #day-dialog { width: min(480px, calc(100% - 32px)); max-height: min(80vh, 760px); overflow: auto; }
+    #day-event-list { max-height: min(52vh, 440px); overflow-y: auto; padding-right: 4px; }
+    .close-dialog {
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: #dce5f2;
+      background: #1a2639;
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    dialog::backdrop { background: rgb(3 8 18 / 72%); backdrop-filter: blur(2px); }
+    .dialog-content { padding: 25px; }
+    .dialog-content h2 { margin: 0 0 20px; font-size: 20px; }
+    .field { display: grid; gap: 7px; margin-top: 14px; }
+    .field[hidden] { display: none; }
+    .field label { color: #b4c0d2; font-size: 12px; font-weight: 600; }
+    .field input, .field textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #34445b;
+      border-radius: 9px;
+      outline: none;
+      color: #e6ecf5;
+      background: #0d1728;
+      font-size: 13px;
+    }
+    .field input:focus, .field textarea:focus { border-color: #9c96e8; box-shadow: 0 0 0 3px rgb(139 131 255 / 18%); }
+    .field textarea { min-height: 82px; resize: vertical; }
+    .field select {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid #34445b;
+      border-radius: 9px;
+      color: #e6ecf5;
+      background: #0d1728;
+      font: inherit;
+      font-size: 13px;
+    }
+    .content-select-button {
+      display: flex;
+      width: 100%;
+      min-height: 42px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 12px;
+      border: 1px solid #34445b;
+      border-radius: 9px;
+      color: #e6ecf5;
+      background: #0d1728;
+      text-align: left;
+      font: inherit;
+      font-size: 13px;
+    }
+    .content-select-button:focus-visible { outline: 2px solid #9c96e8; outline-offset: 2px; }
+    #event-title-menu {
+      position: fixed;
+      z-index: 10;
+      display: grid;
+      gap: 2px;
+      overflow-y: auto;
+      padding: 4px;
+      border: 1px solid #40516b;
+      border-radius: 10px;
+      background: #142136;
+      box-shadow: 0 12px 30px rgb(0 0 0 / 55%);
+    }
+    #event-title-menu[hidden] { display: none; }
+    .content-option {
+      min-height: 30px;
+      padding: 6px 10px;
+      border: 0;
+      border-radius: 6px;
+      color: #e6ecf5;
+      background: transparent;
+      text-align: left;
+      font: inherit;
+      font-size: 13px;
+    }
+    .content-option:hover, .content-option[aria-selected="true"] { background: #293858; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+    .dialog-actions button { min-height: 39px; padding: 0 15px; border: 1px solid var(--line); border-radius: 9px; color: #e6ecf5; background: #1a2639; }
+    .dialog-actions .save-button { border-color: var(--purple); color: #fff; background: #7169e8; font-weight: 600; }
+
+    @media (max-width: 760px) {
+      .app { width: min(100% - 20px, 600px); margin: 10px auto; border-radius: 17px; }
+      .database-setup { padding: 24px 18px; }
+      .connection-bar { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+      .connection-bar span:first-child { width: 100%; }
+      .shared-import { align-items: stretch; flex-direction: column; margin: 12px 14px 0; }
+      .shared-import-actions { flex-direction: column; }
+      .topbar { align-items: flex-start; flex-direction: column; padding: 20px; }
+      .toolbar { width: 100%; }
+      .toolbar .today-button { margin-left: auto; }
+      .workspace { grid-template-columns: 1fr; }
+      .calendar-area { padding: 23px 15px 25px; }
+      .day { min-height: 70px; padding-top: 7px; }
+      .event-count { font-size: 9px; }
+      #day-dialog {
+        position: fixed;
+        inset: auto 0 0;
+        width: 100%;
+        max-width: none;
+        max-height: 85vh;
+        margin: 0;
+        border-radius: 20px 20px 0 0;
+      }
+      #event-dialog {
+        position: fixed;
+        inset: max(12px, env(safe-area-inset-top)) 0 auto;
+        width: 100%;
+        max-width: none;
+        max-height: calc(100vh - 24px);
+        margin: 0;
+        overflow-y: auto;
+        border-radius: 20px;
+      }
+      #day-dialog .dialog-content, #event-dialog .dialog-content {
+        padding: 24px 20px max(24px, env(safe-area-inset-bottom));
+      }
+      #day-event-list { max-height: 48vh; }
+    }
+
+    body { font-size: 17px; }
+    .brand-mark { width: 52px; height: 52px; font-size: 26px; }
+    .brand h1 { font-size: 32px; }
+    .toolbar button, .add-button { min-height: 46px; font-size: 15px; }
+    .toolbar .nav-button { width: 46px; font-size: 25px; }
+    .month-heading h2 { font-size: 32px; }
+    .month-heading span { font-size: 16px; }
+    .weekday { padding-bottom: 16px; font-size: 15px; }
+    .day { min-height: 112px; }
+    .day-number { width: 42px; height: 42px; font-size: 20px; }
+    .day-money { margin-top: 6px; font-size: 11px; }
+    .event-count { font-size: 12px; }
+    .summary-card { padding: 14px 15px; }
+    .summary-card span { font-size: 14px; }
+    .summary-card strong { font-size: 17px; }
+    .agenda-header p { font-size: 15px; }
+    .agenda-header h2 { font-size: 24px; }
+    .add-button { min-height: 42px; }
+    .event-kind-label { font-size: 14px; }
+    .event-amount, .event-title { font-size: 16px; }
+    .event-notes { font-size: 15px; }
+    .delete-event { font-size: 14px; }
+    .empty-state { font-size: 16px; }
+    .storage-hint { font-size: 14px; }
+    .storage-message { font-size: 15px; }
+    .close-dialog { min-height: 42px; font-size: 14px; }
+    .dialog-content h2 { font-size: 26px; }
+    .field label { font-size: 15px; }
+    .field input, .field textarea, .field select, .content-select-button { font-size: 16px; }
+    .content-select-button { min-height: 48px; }
+    .content-option { min-height: 38px; font-size: 16px; }
+    .dialog-actions button { min-height: 46px; font-size: 16px; }
+
+    @media (max-width: 760px) {
+      .app { width: min(100% - 12px, 600px); margin: 6px auto 2px; }
+      .topbar { gap: 12px; padding: 12px 16px; }
+      .brand { gap: 10px; }
+      .brand-mark { width: 44px; height: 44px; font-size: 22px; }
+      .brand h1 { font-size: 28px; }
+      .toolbar button { min-height: 40px; padding: 0 12px; font-size: 14px; }
+      .toolbar .nav-button { width: 40px; font-size: 22px; }
+      .calendar-area { padding: 12px 10px 8px; }
+      .month-heading { gap: 8px; margin-bottom: 12px; }
+      .month-heading h2 { font-size: 28px; }
+      .month-heading span { font-size: 14px; }
+      .summary { gap: 6px; margin-bottom: 12px; }
+      .summary-card { padding: 8px 7px; }
+      .summary-card span { font-size: 12px; }
+      .summary-card strong { margin-top: 5px; font-size: 15px; }
+      .weekday { padding-bottom: 8px; font-size: 14px; }
+      .day { min-height: 72px; padding: 5px 2px 3px; }
+      .day-number { width: 40px; height: 40px; font-size: 20px; }
+      .day-money { gap: 2px; margin-top: 3px; font-size: 10px; }
+      .event-count { margin-top: 2px; font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="database-setup" id="database-setup" aria-labelledby="database-setup-heading" hidden>
+      <h2 id="database-setup-heading">공동 달력 연결</h2>
+      <p>처음 한 번 데이터베이스를 연결하고, 아래 공유 링크를 다른 분들에게 보내면 로그인 없이 같은 달력을 사용할 수 있습니다.</p>
+      <p class="public-access-warning">완전 공개 달력입니다. 누구나 내역을 보고 추가·수정·삭제할 수 있고, 삭제한 내용은 복구할 수 없습니다. 민감한 개인정보는 입력하지 마세요.</p>
+      <button class="add-button" id="download-local-data" type="button" hidden>이 브라우저의 기존 내역 백업</button>
+      <form id="database-config-form">
+        <div class="field">
+          <label for="database-url">Supabase Project URL</label>
+          <input id="database-url" type="url" autocomplete="url" required placeholder="https://프로젝트ID.supabase.co">
+        </div>
+        <div class="field">
+          <label for="database-key">Publishable key 또는 anon key</label>
+          <input id="database-key" type="text" autocomplete="off" required placeholder="Supabase 공개 키">
+        </div>
+        <p class="storage-hint">공개용 키만 입력하세요. service_role 키는 사용할 수 없습니다.</p>
+        <div class="database-actions">
+          <button class="save-button" type="submit">공동 달력 연결</button>
+          <button id="cancel-database-setup" type="button" hidden>달력으로 돌아가기</button>
+        </div>
+      </form>
+      <p class="database-message" id="database-message" role="status" aria-live="polite" hidden></p>
+    </section>
+
+    <div id="calendar-shell" hidden>
+      <div class="connection-bar">
+        <span id="connection-status" role="status">공동 달력 연결 중</span>
+        <button id="copy-share-link" type="button">공유 링크 복사</button>
+        <button id="choose-import-file" type="button">백업 파일 가져오기</button>
+        <input id="import-data-file" type="file" accept="application/json,.json" hidden>
+        <button id="change-database" type="button">연결 설정</button>
+      </div>
+      <div class="shared-import" id="shared-import" hidden>
+        <p id="shared-import-description"></p>
+        <div class="shared-import-actions">
+          <button class="add-button" id="import-local-data" type="button">이 브라우저 내역 가져오기</button>
+        </div>
+      </div>
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">▦</div>
+        <div><h1>뜨란채113동</h1></div>
+      </div>
+      <nav class="toolbar" aria-label="달력 이동">
+        <button class="nav-button" id="previous-month" type="button" aria-label="이전 달">‹</button>
+        <button class="nav-button" id="next-month" type="button" aria-label="다음 달">›</button>
+        <button class="today-button" id="go-today" type="button">오늘</button>
+      </nav>
+    </header>
+
+    <div class="workspace">
+      <section class="calendar-area" aria-label="월간 달력">
+        <div class="month-heading">
+          <h2 id="month-title"></h2>
+          <span id="year-label"></span>
+        </div>
+        <section class="summary" aria-label="이번 달 합계">
+          <div class="summary-card income"><span>이번 달 수입</span><strong id="monthly-income">₩0</strong></div>
+          <div class="summary-card expense"><span>이번 달 지출</span><strong id="monthly-expense">₩0</strong></div>
+          <div class="summary-card balance"><span>이번 달 합계</span><strong id="monthly-balance">₩0</strong></div>
+        </section>
+        <div class="calendar-grid" id="weekday-row" aria-hidden="true"></div>
+        <div class="calendar-grid" id="calendar-grid"></div>
+        <button class="add-button month-events-toggle" id="month-events-toggle" type="button" aria-expanded="false" aria-controls="month-event-section">이번 달 전체 내역 보기</button>
+        <section class="month-event-section" id="month-event-section" aria-labelledby="month-event-heading" hidden>
+          <h2 id="month-event-heading"></h2>
+          <div class="month-event-list" id="month-event-list"></div>
+        </section>
+      </section>
+      </div>
+    </div>
+  </main>
+
+  <dialog id="day-dialog" aria-labelledby="selected-date">
+    <div class="dialog-content">
+        <div class="agenda-header">
+          <div>
+            <p>날짜별 내역</p>
+            <h2 id="selected-date"></h2>
+          </div>
+          <button class="close-dialog" id="close-day-dialog" type="button">닫기</button>
+        </div>
+        <div class="event-list" id="day-event-list"></div>
+        <button class="add-button" id="add-event" type="button">＋ 내역 추가</button>
+        <p class="storage-hint">내역은 공동 달력에 저장되어 링크를 가진 분들과 공유됩니다.</p>
+        <p class="storage-message" id="storage-message" role="status" hidden></p>
+    </div>
+  </dialog>
+
+  <dialog id="event-dialog">
+    <form class="dialog-content" id="event-form">
+      <h2>새 내역</h2>
+      <div class="field">
+        <label for="event-type">구분</label>
+        <select id="event-type" name="type" required>
+          <option value="income">수입</option>
+          <option value="expense">지출</option>
+        </select>
+      </div>
+      <div class="field">
+        <label id="event-title-label" for="event-title-button">내용</label>
+        <input id="event-title" name="title" type="hidden">
+        <button class="content-select-button" id="event-title-button" type="button" role="combobox" aria-labelledby="event-title-label event-title-value" aria-haspopup="listbox" aria-expanded="false" aria-controls="event-title-menu">
+          <span id="event-title-value">내용을 선택해 주세요</span>
+          <span aria-hidden="true">⌄</span>
+        </button>
+        <div id="event-title-menu" role="listbox" aria-labelledby="event-title-label" hidden></div>
+      </div>
+      <div class="field" id="other-title-field" hidden>
+        <label for="other-title-input">기타 내용 (선택)</label>
+        <input id="other-title-input" name="other-title" type="text" maxlength="80" placeholder="내용을 입력해 주세요">
+      </div>
+      <p class="storage-hint" id="other-help" hidden>기타 내용, 금액, 메모 중 하나는 입력해 주세요.</p>
+      <div class="field">
+        <label for="event-amount">금액 (원)</label>
+        <input id="event-amount" name="amount" type="number" min="1" max="999999999999" step="1" required placeholder="예: 12000">
+      </div>
+      <div class="field">
+        <label for="event-notes">메모 (선택)</label>
+        <textarea id="event-notes" name="notes" maxlength="500" placeholder="내역에 대한 메모를 남겨보세요"></textarea>
+      </div>
+      <p class="storage-message" id="event-validation-message" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button id="cancel-event" type="button">취소</button>
+        <button class="save-button" type="submit">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const weekdayNames = ["일", "월", "화", "수", "목", "금", "토"];
+    const weekdayRow = document.getElementById("weekday-row");
+    const calendarGrid = document.getElementById("calendar-grid");
+    const monthTitle = document.getElementById("month-title");
+    const yearLabel = document.getElementById("year-label");
+    const selectedDateLabel = document.getElementById("selected-date");
+    const eventList = document.getElementById("day-event-list");
+    const monthlyIncome = document.getElementById("monthly-income");
+    const monthlyExpense = document.getElementById("monthly-expense");
+    const monthlyBalance = document.getElementById("monthly-balance");
+    const monthEventsToggle = document.getElementById("month-events-toggle");
+    const monthEventSection = document.getElementById("month-event-section");
+    const monthEventHeading = document.getElementById("month-event-heading");
+    const monthEventList = document.getElementById("month-event-list");
+    const storageMessage = document.getElementById("storage-message");
+    const databaseSetup = document.getElementById("database-setup");
+    const databaseConfigForm = document.getElementById("database-config-form");
+    const databaseMessage = document.getElementById("database-message");
+    const databaseUrlInput = document.getElementById("database-url");
+    const databaseKeyInput = document.getElementById("database-key");
+    const cancelDatabaseSetup = document.getElementById("cancel-database-setup");
+    const calendarShell = document.getElementById("calendar-shell");
+    const connectionStatus = document.getElementById("connection-status");
+    const sharedImportBanner = document.getElementById("shared-import");
+    const sharedImportDescription = document.getElementById("shared-import-description");
+    const importLocalDataButton = document.getElementById("import-local-data");
+    const importDataFile = document.getElementById("import-data-file");
+    const downloadLocalDataButton = document.getElementById("download-local-data");
+    const dayDialog = document.getElementById("day-dialog");
+    const eventDialog = document.getElementById("event-dialog");
+    const eventForm = document.getElementById("event-form");
+    const eventTitleSelect = document.getElementById("event-title");
+    const eventTitleButton = document.getElementById("event-title-button");
+    const eventTitleValue = document.getElementById("event-title-value");
+    const eventTitleMenu = document.getElementById("event-title-menu");
+    const otherTitleField = document.getElementById("other-title-field");
+    const otherTitleInput = document.getElementById("other-title-input");
+    const otherHelp = document.getElementById("other-help");
+    const eventAmountInput = document.getElementById("event-amount");
+    const eventAmountLabel = document.querySelector('label[for="event-amount"]');
+    const contentOptions = [
+      "201호", "202호", "203호", "204호", "205호",
+      "301호", "302호", "303호", "304호", "305호",
+      "401호", "402호", "403호", "404호", "405호", "기타"
+    ];
+    const eventValidationMessage = document.getElementById("event-validation-message");
+    const today = new Date();
+    let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let selectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let events = {};
+    let localEventsToImport = {};
+    let supabaseClient = null;
+    let realtimeChannel = null;
+    let currentConfig = null;
+    let activeLoad = 0;
+    const databaseConfigKey = "today-calendar-public-database";
+
+    const pad = (number) => String(number).padStart(2, "0");
+    const dateKey = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const sameDate = (left, right) => dateKey(left) === dateKey(right);
+    const formatWon = (amount) => new Intl.NumberFormat("ko-KR", {
+      style: "currency", currency: "KRW", maximumFractionDigits: 0
+    }).format(amount);
+    const formatTenThousandWon = (amount) => `${new Intl.NumberFormat("ko-KR", {
+      maximumFractionDigits: 4
+    }).format(amount / 10000)}만원`;
+
+    try {
+      const savedEvents = localStorage.getItem("today-calendar-events");
+      events = savedEvents ? JSON.parse(savedEvents) : {};
+      if (!events || typeof events !== "object" || Array.isArray(events)) events = {};
+      localEventsToImport = events;
+      events = {};
+    } catch (error) {
+      setDatabaseMessage("기존 브라우저 내역을 읽지 못했습니다. 원본 데이터는 변경하지 않았습니다.", true);
+      console.error("일정 불러오기 실패:", error);
+    }
+
+    weekdayNames.forEach((name) => {
+      const label = document.createElement("div");
+      label.className = "weekday";
+      label.textContent = name;
+      weekdayRow.append(label);
+    });
+
+    function setDatabaseMessage(message, isError = false) {
+      databaseMessage.textContent = message;
+      databaseMessage.hidden = !message;
+      databaseMessage.classList.toggle("error", isError);
+    }
+
+    function setConnectionStatus(message, isError = false) {
+      connectionStatus.textContent = message;
+      connectionStatus.style.color = isError ? "#ff929c" : "";
+    }
+
+    function loadDatabaseConfig() {
+      const params = new URLSearchParams(window.location.search);
+      const sharedUrl = params.get("calendar_db_url");
+      const sharedKey = params.get("calendar_db_key");
+      if (sharedUrl && sharedKey) {
+        const sharedConfig = { url: sharedUrl, key: sharedKey };
+        try {
+          localStorage.setItem(databaseConfigKey, JSON.stringify(sharedConfig));
+        } catch (error) {
+          console.error("공동 달력 설정을 브라우저에 저장하지 못했습니다:", error);
+        }
+        return sharedConfig;
+      }
+
+      try {
+        const saved = localStorage.getItem(databaseConfigKey);
+        const config = saved ? JSON.parse(saved) : null;
+        if (config && typeof config.url === "string" && typeof config.key === "string") return config;
+      } catch (error) {
+        console.error("저장된 공동 달력 설정을 읽지 못했습니다:", error);
+        setDatabaseMessage("저장된 연결 설정을 읽지 못했습니다. Project URL과 공개 키를 다시 입력해 주세요.", true);
+      }
+      return null;
+    }
+
+    function renderDatabaseRows(rows) {
+      const nextEvents = {};
+      rows.forEach((row) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(row.entry_date)) {
+          throw new Error("공동 달력에 올바르지 않은 날짜가 있습니다.");
+        }
+        if (!["income", "expense"].includes(row.type)) {
+          throw new Error("공동 달력에 올바르지 않은 수입·지출 구분이 있습니다.");
+        }
+        const amount = row.amount === null ? null : Number(row.amount);
+        if (amount !== null && (!Number.isSafeInteger(amount) || amount <= 0)) {
+          throw new Error("공동 달력에 올바르지 않은 금액이 있습니다.");
+        }
+        const entry = {
+          id: String(row.id),
+          title: String(row.title),
+          type: row.type,
+          notes: String(row.notes || "")
+        };
+        if (amount !== null) entry.amount = amount;
+        if (!Array.isArray(nextEvents[row.entry_date])) nextEvents[row.entry_date] = [];
+        nextEvents[row.entry_date].push(entry);
+      });
+      events = nextEvents;
+    }
+
+    async function refreshSharedEvents() {
+      const loadId = ++activeLoad;
+      const { data, error } = await supabaseClient
+        .from("shared_calendar_entries")
+        .select("id, entry_date, title, type, amount, notes")
+        .order("entry_date", { ascending: true });
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new Error("공동 달력에서 내역 목록을 받지 못했습니다.");
+      if (loadId !== activeLoad) return false;
+      renderDatabaseRows(data);
+      render();
+      return true;
+    }
+
+    function subscribeToSharedEvents() {
+      if (realtimeChannel) {
+        void supabaseClient.removeChannel(realtimeChannel);
+      }
+      realtimeChannel = supabaseClient
+        .channel("public-calendar-entries")
+        .on("postgres_changes", {
+          event: "*",
+          schema: "public",
+          table: "shared_calendar_entries"
+        }, () => {
+          refreshSharedEvents()
+            .then((loaded) => {
+              if (loaded) setConnectionStatus("공동 달력 · 변경사항 동기화됨");
+            })
+            .catch((error) => {
+              console.error("공동 달력 새로고침 실패:", error);
+              setConnectionStatus(`새로고침 실패: ${error.message}`, true);
+            });
+        })
+        .subscribe((status, error) => {
+          if (status === "SUBSCRIBED") setConnectionStatus("공동 달력 · 실시간 연결됨");
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            setConnectionStatus(`실시간 연결 실패${error?.message ? `: ${error.message}` : ""}`, true);
+          }
+        });
+    }
+
+    function countRecords(source) {
+      return Object.values(source).reduce((count, items) => {
+        return count + (Array.isArray(items) ? items.length : 0);
+      }, 0);
+    }
+
+    function updateLocalImportBanner() {
+      const recordCount = countRecords(localEventsToImport);
+      downloadLocalDataButton.hidden = recordCount === 0;
+      let alreadyImported = false;
+      try {
+        alreadyImported = localStorage.getItem(`today-calendar-public-imported:${new URL(currentConfig.url).hostname}`) === "true";
+      } catch (error) {
+        console.error("기존 내역 가져오기 상태를 읽지 못했습니다:", error);
+      }
+      sharedImportBanner.hidden = recordCount === 0 || alreadyImported;
+      sharedImportDescription.textContent = `이 기기에 기존 내역 ${recordCount}건이 있습니다. 공동 달력에 가져오면 링크를 아는 모든 분이 볼 수 있습니다. 기존 브라우저 데이터는 삭제되지 않습니다.`;
+    }
+
+    downloadLocalDataButton.addEventListener("click", () => {
+      const blob = new Blob([JSON.stringify(localEventsToImport, null, 2)], { type: "application/json" });
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `calendar-backup-${dateKey(today)}.json`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    });
+
+    async function connectToSharedDatabase(config) {
+      const connectButton = databaseConfigForm.querySelector('button[type="submit"]');
+      databaseSetup.hidden = false;
+      calendarShell.hidden = true;
+      connectButton.disabled = true;
+      setDatabaseMessage("공동 달력에 연결하는 중입니다.");
+      try {
+        if (!window.supabase?.createClient) {
+          throw new Error("데이터베이스 연결 도구를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.");
+        }
+        const parsedUrl = new URL(config.url);
+        if (parsedUrl.protocol !== "https:" || !parsedUrl.hostname.endsWith(".supabase.co") || !config.key) {
+          throw new Error("Supabase Project URL과 공개 Publishable/anon key를 확인해 주세요.");
+        }
+        const client = window.supabase.createClient(config.url, config.key, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+        const { data, error } = await client
+          .from("shared_calendar_entries")
+          .select("id, entry_date, title, type, amount, notes")
+          .order("entry_date", { ascending: true });
+        if (error) throw error;
+        if (!Array.isArray(data)) throw new Error("공동 달력에서 내역 목록을 받지 못했습니다.");
+
+        supabaseClient = client;
+        currentConfig = config;
+        try {
+          localStorage.setItem(databaseConfigKey, JSON.stringify(config));
+        } catch (storageError) {
+          console.error("공동 달력 설정을 브라우저에 저장하지 못했습니다:", storageError);
+        }
+        renderDatabaseRows(data);
+        databaseSetup.hidden = true;
+        calendarShell.hidden = false;
+        databaseConfigForm.querySelector("#cancel-database-setup").hidden = false;
+        setDatabaseMessage("");
+        render();
+        updateLocalImportBanner();
+        subscribeToSharedEvents();
+      } catch (error) {
+        databaseSetup.hidden = false;
+        calendarShell.hidden = true;
+        databaseConfigForm.querySelector("#cancel-database-setup").hidden = false;
+        setDatabaseMessage(`연결하지 못했습니다: ${error.message}`, true);
+        setConnectionStatus("공동 달력 연결 실패", true);
+        console.error("공동 달력 연결 실패:", error);
+      } finally {
+        connectButton.disabled = false;
+      }
+    }
+
+    databaseConfigForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const config = {
+        url: databaseUrlInput.value.trim().replace(/\/+$/, ""),
+        key: databaseKeyInput.value.trim()
+      };
+      void connectToSharedDatabase(config);
+    });
+
+    document.getElementById("change-database").addEventListener("click", () => {
+      databaseUrlInput.value = currentConfig?.url || "";
+      databaseKeyInput.value = currentConfig?.key || "";
+      databaseSetup.hidden = false;
+      calendarShell.hidden = true;
+      databaseConfigForm.querySelector("#cancel-database-setup").hidden = false;
+      setDatabaseMessage("");
+    });
+    cancelDatabaseSetup.addEventListener("click", () => {
+      if (!supabaseClient) return;
+      databaseSetup.hidden = true;
+      calendarShell.hidden = false;
+    });
+    document.getElementById("copy-share-link").addEventListener("click", async () => {
+      if (!currentConfig) return;
+      if (window.location.protocol === "file:") {
+        setConnectionStatus("사이트를 GitHub Pages에 올린 뒤 공유 링크를 복사하세요.", true);
+        return;
+      }
+      const shareUrl = new URL(window.location.href);
+      shareUrl.searchParams.set("calendar_db_url", currentConfig.url);
+      shareUrl.searchParams.set("calendar_db_key", currentConfig.key);
+      try {
+        await navigator.clipboard.writeText(shareUrl.toString());
+        setConnectionStatus("공유 링크를 복사했습니다. 로그인 없이 열 수 있습니다.");
+      } catch (error) {
+        setConnectionStatus(`링크를 자동 복사하지 못했습니다: ${shareUrl.toString()}`, true);
+        console.error("공동 달력 링크 복사 실패:", error);
+      }
+    });
+
+    async function importEntries(source, button, importedFromBrowser) {
+      const rows = [];
+      Object.entries(source).forEach(([key, dayEvents]) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key) || !Array.isArray(dayEvents)) return;
+        dayEvents.forEach((entry, index) => {
+          if (!entry || typeof entry !== "object") return;
+          const amount = Number(entry.amount);
+          rows.push({
+            id: String(entry.id || `local-${key}-${index}`),
+            entry_date: key,
+            title: String(entry.title || "기타"),
+            type: entry.type === "income" ? "income" : "expense",
+            amount: Number.isSafeInteger(amount) && amount > 0 ? amount : null,
+            notes: String(entry.notes || "")
+          });
+        });
+      });
+      if (!rows.length) {
+        setConnectionStatus("가져올 수 있는 내역이 없습니다.", true);
+        return;
+      }
+      button.disabled = true;
+      setConnectionStatus("기존 내역을 공동 달력으로 가져오는 중");
+      try {
+        for (let offset = 0; offset < rows.length; offset += 500) {
+          const { error } = await supabaseClient
+            .from("shared_calendar_entries")
+            .upsert(rows.slice(offset, offset + 500), {
+              onConflict: "id",
+              ignoreDuplicates: true
+            });
+          if (error) throw error;
+        }
+        await refreshSharedEvents();
+        if (importedFromBrowser) {
+          try {
+            localStorage.setItem(`today-calendar-public-imported:${new URL(currentConfig.url).hostname}`, "true");
+          } catch (storageError) {
+            console.error("가져오기 완료 상태를 저장하지 못했습니다:", storageError);
+          }
+          updateLocalImportBanner();
+        }
+        setConnectionStatus(`${rows.length}건을 가져왔습니다. 브라우저의 원본은 그대로 남아 있습니다.`);
+      } catch (error) {
+        setConnectionStatus(`기존 내역을 가져오지 못했습니다: ${error.message}`, true);
+        console.error("기존 브라우저 내역 가져오기 실패:", error);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    importLocalDataButton.addEventListener("click", () => {
+      void importEntries(localEventsToImport, importLocalDataButton, true);
+    });
+    document.getElementById("choose-import-file").addEventListener("click", () => importDataFile.click());
+    importDataFile.addEventListener("change", async () => {
+      const file = importDataFile.files[0];
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("달력 백업 JSON 형식이 아닙니다.");
+        }
+        await importEntries(parsed, document.getElementById("choose-import-file"), false);
+      } catch (error) {
+        setConnectionStatus(`백업 파일을 가져오지 못했습니다: ${error.message}`, true);
+        console.error("백업 파일 읽기 실패:", error);
+      } finally {
+        importDataFile.value = "";
+      }
+    });
+
+    function renderCalendar() {
+      monthTitle.textContent = `${visibleMonth.getMonth() + 1}월`;
+      yearLabel.textContent = `${visibleMonth.getFullYear()}년`;
+      calendarGrid.replaceChildren();
+
+      const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+      const start = new Date(firstDay.getFullYear(), firstDay.getMonth(), 1 - firstDay.getDay());
+      const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+      const weekCount = Math.ceil((firstDay.getDay() + daysInMonth) / 7);
+      const monthPrefix = `${visibleMonth.getFullYear()}-${pad(visibleMonth.getMonth() + 1)}-`;
+      const totals = Object.entries(events).reduce((sum, [key, entries]) => {
+        if (!key.startsWith(monthPrefix) || !Array.isArray(entries)) return sum;
+        entries.forEach((entry) => {
+          if (!Number.isSafeInteger(entry.amount) || entry.amount < 0) return;
+          if (entry.type === "income") sum.income += entry.amount;
+          if (entry.type === "expense") sum.expense += entry.amount;
+        });
+        return sum;
+      }, { income: 0, expense: 0 });
+      monthlyIncome.textContent = formatTenThousandWon(totals.income);
+      monthlyExpense.textContent = formatTenThousandWon(totals.expense);
+      monthlyBalance.textContent = formatTenThousandWon(totals.income - totals.expense);
+
+      for (let index = 0; index < weekCount * 7; index += 1) {
+        const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index);
+        const key = dateKey(date);
+        const dayEvents = Array.isArray(events[key]) ? events[key] : [];
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "day";
+        const detailLabels = dayEvents.map((item) => {
+          const sign = item.type === "income" ? "+" : "−";
+          const amount = Number.isSafeInteger(item.amount) ? ` ${sign}${formatTenThousandWon(item.amount)}` : "";
+          return `${item.title}${amount}`;
+        });
+        button.setAttribute("aria-label", `${date.getMonth() + 1}월 ${date.getDate()}일${dayEvents.length ? `, ${detailLabels.join(", ")}` : ""}`);
+        if (date.getMonth() !== visibleMonth.getMonth()) button.classList.add("outside");
+        if (sameDate(date, today)) button.classList.add("today");
+        if (sameDate(date, selectedDate)) button.classList.add("selected");
+
+        const number = document.createElement("span");
+        number.className = "day-number";
+        number.textContent = date.getDate();
+        button.append(number);
+
+        if (dayEvents.length) {
+          const money = document.createElement("span");
+          money.className = "day-money";
+          dayEvents.slice(0, 3).forEach((item) => {
+            const detail = document.createElement("span");
+            const hasAmount = Number.isSafeInteger(item.amount);
+            detail.className = !hasAmount ? "day-note" : item.type === "income" ? "day-income day-deposit" : "day-expense";
+            const sign = item.type === "income" ? "+" : "−";
+            const amount = hasAmount ? ` ${sign}${formatTenThousandWon(item.amount)}` : "";
+            detail.textContent = `${item.title}${amount}`;
+            detail.title = detail.textContent;
+            money.append(detail);
+          });
+          if (dayEvents.length > 3) {
+            const more = document.createElement("span");
+            more.className = "event-count";
+            more.textContent = `외 ${dayEvents.length - 3}건 더`;
+            money.append(more);
+          }
+          button.append(money);
+        }
+
+        button.addEventListener("click", () => {
+          selectedDate = date;
+          if (date.getMonth() !== visibleMonth.getMonth()) {
+            visibleMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+          }
+          render();
+          downloadLocalDataButton.hidden = countRecords(localEventsToImport) === 0;
+          dayDialog.showModal();
+        });
+        calendarGrid.append(button);
+      }
+      if (!monthEventSection.hidden) renderMonthEvents();
+    }
+
+    function renderMonthEvents() {
+      const monthPrefix = `${visibleMonth.getFullYear()}-${pad(visibleMonth.getMonth() + 1)}-`;
+      const records = [];
+      Object.entries(events).forEach(([key, dayEvents]) => {
+        if (!key.startsWith(monthPrefix) || !Array.isArray(dayEvents)) return;
+        dayEvents.forEach((event) => records.push({ key, event }));
+      });
+      records.sort((left, right) => left.key.localeCompare(right.key));
+
+      monthEventHeading.textContent = `${visibleMonth.getFullYear()}년 ${visibleMonth.getMonth() + 1}월 전체 내역`;
+      monthEventList.replaceChildren();
+      if (!records.length) {
+        const empty = document.createElement("p");
+        empty.className = "empty-state";
+        empty.textContent = "이번 달에 등록된 내역이 없어요.";
+        monthEventList.append(empty);
+        return;
+      }
+
+      records.forEach(({ key, event }) => {
+        const [year, month, day] = key.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
+        const hasAmount = Number.isSafeInteger(event.amount);
+        const isIncome = event.type === "income";
+        const card = document.createElement("article");
+        card.className = `event-card month-event-card${!hasAmount ? " note" : isIncome ? " income" : ""}`;
+
+        const dateLabel = document.createElement("p");
+        dateLabel.className = "month-event-date";
+        dateLabel.textContent = new Intl.DateTimeFormat("ko-KR", {
+          month: "long", day: "numeric", weekday: "short"
+        }).format(date);
+        card.append(dateLabel);
+
+        const kind = document.createElement("div");
+        kind.className = "event-kind";
+        const kindLabel = document.createElement("span");
+        kindLabel.className = "event-kind-label";
+        kindLabel.textContent = hasAmount ? (isIncome ? "수입" : "지출") : "메모";
+        kind.append(kindLabel);
+        if (hasAmount) {
+          const amount = document.createElement("strong");
+          amount.className = `event-amount ${isIncome ? "amount-income" : "amount-expense"}`;
+          amount.textContent = `${isIncome ? "+" : "−"}${formatWon(event.amount)}`;
+          kind.append(amount);
+        }
+        card.append(kind);
+
+        const title = document.createElement("h3");
+        title.className = "event-title";
+        title.textContent = event.title || "기타";
+        card.append(title);
+        if (event.notes) {
+          const notes = document.createElement("p");
+          notes.className = "event-notes";
+          notes.textContent = event.notes;
+          card.append(notes);
+        }
+        monthEventList.append(card);
+      });
+    }
+
+    function renderAgenda() {
+      selectedDateLabel.textContent = new Intl.DateTimeFormat("ko-KR", {
+        month: "long", day: "numeric", weekday: "long"
+      }).format(selectedDate);
+      eventList.replaceChildren();
+      const dayEvents = Array.isArray(events[dateKey(selectedDate)]) ? events[dateKey(selectedDate)] : [];
+
+      if (!dayEvents.length) {
+        const empty = document.createElement("p");
+        empty.className = "empty-state";
+          empty.textContent = "등록된 내역이 없어요.\n새로운 내역을 추가해 보세요.";
+        eventList.append(empty);
+        return;
+      }
+
+      dayEvents.forEach((event) => {
+        const card = document.createElement("article");
+          card.className = `event-card${event.type === "income" ? " income" : ""}`;
+          const kind = document.createElement("div");
+          kind.className = "event-kind";
+          const kindLabel = document.createElement("span");
+          kindLabel.className = "event-kind-label";
+          kindLabel.textContent = event.type === "income" ? "수입" : event.type === "expense" ? "지출" : "기존 일정";
+          kind.append(kindLabel);
+          if (Number.isSafeInteger(event.amount)) {
+            const amount = document.createElement("strong");
+            amount.className = `event-amount ${event.type === "income" ? "amount-income" : "amount-expense"}`;
+            amount.textContent = `${event.type === "income" ? "+" : "−"}${formatWon(event.amount)}`;
+            kind.append(amount);
+          }
+          card.append(kind);
+        const title = document.createElement("h3");
+        title.className = "event-title";
+        title.textContent = event.title;
+        card.append(title);
+        if (event.notes) {
+          const notes = document.createElement("p");
+          notes.className = "event-notes";
+          notes.textContent = event.notes;
+          card.append(notes);
+        }
+        const remove = document.createElement("button");
+        remove.className = "delete-event";
+        remove.type = "button";
+        remove.textContent = "삭제";
+        remove.setAttribute("aria-label", `${event.title} 내역 삭제`);
+        remove.addEventListener("click", () => deleteEvent(event.id));
+        card.append(remove);
+        eventList.append(card);
+      });
+    }
+
+    function render() {
+      renderCalendar();
+      renderAgenda();
+    }
+
+    async function deleteEvent(id) {
+      const key = dateKey(selectedDate);
+      storageMessage.hidden = true;
+      try {
+        const { data, error } = await supabaseClient
+          .from("shared_calendar_entries")
+          .delete()
+          .eq("id", id)
+          .select("id");
+        if (error) throw error;
+        if (!Array.isArray(data) || !data.length) throw new Error("내역이 삭제되지 않았습니다. 새로고침 후 다시 확인해 주세요.");
+        events[key] = (events[key] || []).filter((entry) => entry.id !== id);
+        if (!events[key].length) delete events[key];
+        render();
+        setConnectionStatus("내역을 삭제했습니다.");
+      } catch (error) {
+        storageMessage.hidden = false;
+        storageMessage.textContent = `내역을 삭제하지 못했습니다: ${error.message}`;
+        console.error("공동 달력 내역 삭제 실패:", error);
+      }
+    }
+
+    document.getElementById("previous-month").addEventListener("click", () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+      renderCalendar();
+    });
+    document.getElementById("next-month").addEventListener("click", () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+      renderCalendar();
+    });
+    monthEventsToggle.addEventListener("click", () => {
+      const shouldShow = monthEventSection.hidden;
+      monthEventSection.hidden = !shouldShow;
+      monthEventsToggle.setAttribute("aria-expanded", String(shouldShow));
+      monthEventsToggle.textContent = shouldShow ? "이번 달 전체 내역 숨기기" : "이번 달 전체 내역 보기";
+      if (shouldShow) {
+        renderMonthEvents();
+        monthEventSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+    document.getElementById("go-today").addEventListener("click", () => {
+      visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      selectedDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      render();
+    });
+    document.getElementById("add-event").addEventListener("click", () => {
+      eventForm.reset();
+      eventTitleSelect.value = "";
+      eventTitleValue.textContent = "내용을 선택해 주세요";
+      eventTitleMenu.querySelectorAll(".content-option").forEach((option) => {
+        option.setAttribute("aria-selected", "false");
+      });
+      closeContentMenu();
+      eventValidationMessage.hidden = true;
+      updateOtherTitleField();
+      eventDialog.showModal();
+      eventTitleButton.focus();
+    });
+    document.getElementById("close-day-dialog").addEventListener("click", () => dayDialog.close());
+    dayDialog.addEventListener("click", (event) => {
+      if (event.target === dayDialog) dayDialog.close();
+    });
+    function updateOtherTitleField() {
+      const isOther = eventTitleSelect.value === "기타";
+      otherTitleField.hidden = !isOther;
+      otherHelp.hidden = !isOther;
+      otherTitleInput.required = false;
+      eventAmountInput.required = !isOther;
+      eventAmountLabel.textContent = isOther ? "금액 (원, 선택)" : "금액 (원)";
+    }
+
+    function positionContentMenu() {
+      const rect = eventTitleButton.getBoundingClientRect();
+      const padding = 12;
+      const menuHeight = Math.min(eventTitleMenu.scrollHeight, window.innerHeight - padding * 2);
+      let top = rect.bottom + 6;
+      if (top + menuHeight > window.innerHeight - padding) {
+        top = rect.top - menuHeight - 6;
+      }
+
+      eventTitleMenu.style.top = `${Math.max(padding, Math.min(top, window.innerHeight - menuHeight - padding))}px`;
+      eventTitleMenu.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - rect.width - 8))}px`;
+      eventTitleMenu.style.width = `${Math.min(rect.width, window.innerWidth - 16)}px`;
+      eventTitleMenu.style.maxHeight = `${menuHeight}px`;
+    }
+
+    function openContentMenu(focusSelected = false) {
+      eventTitleMenu.hidden = false;
+      eventTitleButton.setAttribute("aria-expanded", "true");
+      positionContentMenu();
+      if (focusSelected) {
+        const selectedIndex = contentOptions.indexOf(eventTitleSelect.value);
+        const targetIndex = selectedIndex >= 0 ? selectedIndex : 0;
+        eventTitleMenu.querySelectorAll(".content-option")[targetIndex].focus();
+      }
+    }
+
+    function closeContentMenu() {
+      eventTitleMenu.hidden = true;
+      eventTitleButton.setAttribute("aria-expanded", "false");
+    }
+
+    function selectContentOption(value) {
+      eventTitleSelect.value = value;
+      eventTitleValue.textContent = value;
+      eventTitleMenu.querySelectorAll(".content-option").forEach((option) => {
+        option.setAttribute("aria-selected", String(option.dataset.value === value));
+      });
+      updateOtherTitleField();
+      eventValidationMessage.hidden = true;
+      closeContentMenu();
+      eventTitleButton.focus();
+    }
+
+    contentOptions.forEach((value) => {
+      const option = document.createElement("button");
+      option.className = "content-option";
+      option.type = "button";
+      option.setAttribute("role", "option");
+      option.tabIndex = -1;
+      option.dataset.value = value;
+      option.setAttribute("aria-selected", "false");
+      option.textContent = value;
+      option.addEventListener("click", () => selectContentOption(value));
+      option.addEventListener("keydown", (event) => {
+        const options = Array.from(eventTitleMenu.querySelectorAll(".content-option"));
+        const index = options.indexOf(option);
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          closeContentMenu();
+          eventTitleButton.focus();
+        } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          options[(index + (event.key === "ArrowDown" ? 1 : options.length - 1)) % options.length].focus();
+        } else if (event.key === "Home" || event.key === "End") {
+          event.preventDefault();
+          options[event.key === "Home" ? 0 : options.length - 1].focus();
+        }
+      });
+      eventTitleMenu.append(option);
+    });
+
+    eventTitleButton.addEventListener("click", () => {
+      if (eventTitleMenu.hidden) openContentMenu();
+      else closeContentMenu();
+    });
+    eventTitleButton.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !eventTitleMenu.hidden) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeContentMenu();
+      } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        openContentMenu(true);
+      }
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (!eventTitleMenu.hidden && !eventTitleMenu.contains(event.target) && event.target !== eventTitleButton) {
+        closeContentMenu();
+      }
+    });
+    window.addEventListener("resize", () => {
+      if (!eventTitleMenu.hidden) positionContentMenu();
+    });
+    eventDialog.addEventListener("scroll", () => {
+      if (!eventTitleMenu.hidden) positionContentMenu();
+    });
+    eventForm.addEventListener("input", () => {
+      eventValidationMessage.hidden = true;
+    });
+    eventForm.addEventListener("change", () => {
+      eventValidationMessage.hidden = true;
+    });
+    document.getElementById("cancel-event").addEventListener("click", () => eventDialog.close());
+    eventDialog.addEventListener("click", (event) => {
+      if (event.target === eventDialog) eventDialog.close();
+    });
+    eventForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(eventForm);
+      const selectedTitle = String(formData.get("title") || "").trim();
+      const otherTitle = String(formData.get("other-title") || "").trim();
+      const amountText = String(formData.get("amount") || "").trim();
+      const notes = String(formData.get("notes") || "").trim();
+      const amount = amountText ? Number(amountText) : null;
+      if (!selectedTitle) {
+        eventValidationMessage.textContent = "내용을 선택해 주세요.";
+        eventValidationMessage.hidden = false;
+        eventTitleButton.focus();
+        return;
+      }
+      if (selectedTitle === "기타" && !otherTitle && !amountText && !notes) {
+        eventValidationMessage.textContent = "기타 내용, 금액, 메모 중 하나는 입력해 주세요.";
+        eventValidationMessage.hidden = false;
+        otherTitleInput.focus();
+        return;
+      }
+      if (selectedTitle !== "기타" && (!Number.isSafeInteger(amount) || amount <= 0)) {
+        eventValidationMessage.textContent = "올바른 금액을 입력해 주세요.";
+        eventValidationMessage.hidden = false;
+        eventAmountInput.focus();
+        return;
+      }
+      if (amountText && (!Number.isSafeInteger(amount) || amount <= 0)) {
+        eventValidationMessage.textContent = "금액은 1원 이상의 정수로 입력해 주세요.";
+        eventValidationMessage.hidden = false;
+        eventAmountInput.focus();
+        return;
+      }
+      const key = dateKey(selectedDate);
+      const newEvent = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        title: selectedTitle === "기타" ? otherTitle || "기타" : selectedTitle,
+        type: String(formData.get("type")),
+        notes
+      };
+      if (amount !== null) newEvent.amount = amount;
+      const saveButton = eventForm.querySelector('button[type="submit"]');
+      saveButton.disabled = true;
+      eventValidationMessage.hidden = true;
+      setConnectionStatus("내역 저장 중");
+      try {
+        const { error } = await supabaseClient.from("shared_calendar_entries").insert({
+          id: newEvent.id,
+          entry_date: key,
+          title: newEvent.title,
+          type: newEvent.type,
+          amount: newEvent.amount ?? null,
+          notes: newEvent.notes
+        });
+        if (error) throw error;
+        if (!Array.isArray(events[key])) events[key] = [];
+        events[key].push(newEvent);
+        render();
+        setConnectionStatus("내역을 저장했습니다.");
+        eventDialog.close();
+      } catch (error) {
+        eventValidationMessage.textContent = `내역을 저장하지 못했습니다: ${error.message}`;
+        eventValidationMessage.hidden = false;
+        setConnectionStatus("내역 저장 실패", true);
+        console.error("공동 달력 내역 저장 실패:", error);
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
+
+    render();
+    const startupConfig = loadDatabaseConfig();
+    if (startupConfig) {
+      databaseUrlInput.value = startupConfig.url;
+      databaseKeyInput.value = startupConfig.key;
+      void connectToSharedDatabase(startupConfig);
+    } else {
+      databaseSetup.hidden = false;
+      calendarShell.hidden = true;
+    }
+  </script>
+</body>
+</html>
