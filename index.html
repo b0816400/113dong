@@ -777,7 +777,7 @@
       </div>
       <div class="field">
         <label for="room-phone-number-input">전화번호</label>
-        <input id="room-phone-number-input" type="tel" maxlength="30" autocomplete="tel" placeholder="예: 010-1234-5678">
+        <input id="room-phone-number-input" type="text" inputmode="numeric" maxlength="30" autocomplete="tel" placeholder="예: 010-1234-5678">
       </div>
       <div class="field">
         <label for="room-move-in-date-input">입주일</label>
@@ -913,6 +913,27 @@
       if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
       const [year, month, day] = value.split("-").map(Number);
       return dateKey(new Date(year, month - 1, day)) === value;
+    }
+    function formatPhoneNumber(value) {
+      const digits = String(value || "").replace(/\D/g, "");
+      if (!digits) return "";
+      if (digits.startsWith("02")) {
+        if (digits.length <= 2) return digits;
+        const middleLength = digits.length >= 10 ? 4 : 3;
+        return [digits.slice(0, 2), digits.slice(2, 2 + middleLength), digits.slice(2 + middleLength)]
+          .filter(Boolean)
+          .join("-");
+      }
+      if (digits.startsWith("010")) {
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+        return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+      }
+      if (digits.length <= 3) return digits;
+      const middleLength = digits.length >= 11 ? 4 : 3;
+      return [digits.slice(0, 3), digits.slice(3, 3 + middleLength), digits.slice(3 + middleLength)]
+        .filter(Boolean)
+        .join("-");
     }
     function getRoomProfileDetails(roomNumber) {
       const profile = roomProfiles[roomNumber];
@@ -1060,7 +1081,7 @@
           throw new Error("공동 달력에 올바르지 않은 호실 설정이 있습니다.");
         }
         const residentName = String(row.resident_name || "");
-        const phoneNumber = String(row.phone_number || "");
+        const phoneNumber = formatPhoneNumber(row.phone_number);
         if (residentName.length > 80) {
           throw new Error(`${roomNumber} 거주자 이름이 너무 깁니다.`);
         }
@@ -1190,7 +1211,7 @@
         monthlyRent: null
       };
       roomResidentNameInput.value = profile.residentName;
-      roomPhoneNumberInput.value = profile.phoneNumber;
+      roomPhoneNumberInput.value = formatPhoneNumber(profile.phoneNumber);
       roomMoveInDateInput.value = profile.moveInDate || "";
       roomDepositInput.value = profile.depositAmount === null ? "" : String(profile.depositAmount / 10000);
       roomMonthlyRentInput.value = profile.monthlyRent === null ? "" : String(profile.monthlyRent / 10000);
@@ -1310,6 +1331,21 @@
       roomSettingsDialog.showModal();
     });
     roomSettingsNumber.addEventListener("change", fillRoomSettingsForm);
+    roomPhoneNumberInput.addEventListener("input", () => {
+      const input = roomPhoneNumberInput;
+      const cursorPosition = input.selectionStart ?? input.value.length;
+      const digitsBeforeCursor = input.value.slice(0, cursorPosition).replace(/\D/g, "").length;
+      const formatted = formatPhoneNumber(input.value);
+      if (input.value === formatted) return;
+      input.value = formatted;
+      let nextCursorPosition = 0;
+      let digitsSeen = 0;
+      while (nextCursorPosition < formatted.length && digitsSeen < digitsBeforeCursor) {
+        if (/\d/.test(formatted[nextCursorPosition])) digitsSeen += 1;
+        nextCursorPosition += 1;
+      }
+      input.setSelectionRange(nextCursorPosition, nextCursorPosition);
+    });
     document.getElementById("close-room-settings").addEventListener("click", () => roomSettingsDialog.close());
     document.getElementById("cancel-room-settings").addEventListener("click", () => roomSettingsDialog.close());
     roomSettingsDialog.addEventListener("click", (event) => {
@@ -1319,7 +1355,8 @@
       event.preventDefault();
       const roomNumber = roomSettingsNumber.value;
       const residentName = roomResidentNameInput.value.trim();
-      const phoneNumber = roomPhoneNumberInput.value.trim();
+      const phoneNumber = formatPhoneNumber(roomPhoneNumberInput.value);
+      roomPhoneNumberInput.value = phoneNumber;
       const moveInDate = roomMoveInDateInput.value || null;
       const parseAmount = (input, label) => {
         const value = input.value.trim();
