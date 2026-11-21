@@ -27,11 +27,15 @@ create table if not exists public.shared_calendar_rooms (
     '401호', '402호', '403호', '404호', '405호'
   )),
   resident_name text not null default '' check (char_length(resident_name) <= 80),
+  phone_number text not null default '' check (char_length(phone_number) <= 30),
   move_in_date date,
   deposit_amount bigint check (deposit_amount is null or deposit_amount between 0 and 999999999999),
   monthly_rent bigint check (monthly_rent is null or monthly_rent between 0 and 999999999999),
   updated_at timestamptz not null default now()
 );
+
+alter table public.shared_calendar_rooms
+  add column if not exists phone_number text not null default '';
 
 insert into public.shared_calendar_rooms (room_number)
 values

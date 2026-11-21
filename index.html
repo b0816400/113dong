@@ -562,7 +562,7 @@
     <section class="database-setup" id="database-setup" aria-labelledby="database-setup-heading" hidden>
       <h2 id="database-setup-heading">공동 달력 연결</h2>
       <p>처음 한 번 데이터베이스를 연결하고, 아래 공유 링크를 다른 분들에게 보내면 로그인 없이 같은 달력을 사용할 수 있습니다.</p>
-      <p class="public-access-warning">완전 공개 달력입니다. 누구나 내역을 보고 추가·수정·삭제할 수 있고, 삭제한 내용은 복구할 수 없습니다. 민감한 개인정보는 입력하지 마세요.</p>
+      <p class="public-access-warning">완전 공개 달력입니다. 누구나 내역과 호실의 이름·전화번호를 보고 수정할 수 있습니다. 공개해도 괜찮은 정보만 입력하세요. 삭제한 내용은 복구할 수 없습니다.</p>
       <button class="add-button" id="download-local-data" type="button" hidden>이 브라우저의 기존 내역 백업</button>
       <form id="database-config-form">
         <div class="field">
@@ -637,7 +637,7 @@
         <button class="add-button month-events-toggle" id="history-toggle" type="button" aria-expanded="false" aria-controls="history-section">호실별 내역 조회</button>
         <section class="history-section" id="history-section" aria-labelledby="history-heading" hidden>
           <h2 id="history-heading">호실별 내역 조회</h2>
-          <p class="history-description">최근 12개월 내역이 기본으로 표시됩니다. 호실·거주자 이름·입주일·보증금·월세·내역 제목·메모를 검색할 수 있어요.</p>
+          <p class="history-description">최근 12개월 내역이 기본으로 표시됩니다. 호실·이름·전화번호·입주일·보증금·월세·내역 제목·메모를 검색할 수 있어요.</p>
           <div class="history-filters">
             <div class="history-filter">
               <label for="history-room">호실</label>
@@ -676,7 +676,7 @@
             <p class="history-summary" id="history-summary" role="status" aria-live="polite"></p>
             <div class="history-search">
               <label for="history-search-input">내용 검색</label>
-              <input id="history-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="history-search-results" aria-expanded="false" autocomplete="off" placeholder="호실·이름·입주일·보증금·월세·메모 검색">
+              <input id="history-search-input" type="search" role="combobox" aria-autocomplete="list" aria-controls="history-search-results" aria-expanded="false" autocomplete="off" placeholder="호실·이름·전화번호·입주일·보증금·월세 검색">
               <div class="history-search-results" id="history-search-results" role="listbox" hidden></div>
               <p class="history-search-status" id="history-search-status" role="status" aria-live="polite" hidden></p>
             </div>
@@ -766,7 +766,7 @@
         </div>
         <button class="close-dialog" id="close-room-settings" type="button">닫기</button>
       </div>
-      <p class="public-access-warning">공개 안내: 저장한 이름, 입주일, 보증금, 월세는 누구나 볼 수 있고 수정할 수 있습니다.</p>
+      <p class="public-access-warning">공개 안내: 저장한 이름, 전화번호, 입주일, 보증금, 월세는 누구나 볼 수 있고 수정할 수 있습니다.</p>
       <div class="field">
         <label for="room-settings-number">호실</label>
         <select id="room-settings-number" required></select>
@@ -774,6 +774,10 @@
       <div class="field">
         <label for="room-resident-name-input">거주자 이름</label>
         <input id="room-resident-name-input" type="text" maxlength="80" autocomplete="off" placeholder="이름을 입력해 주세요">
+      </div>
+      <div class="field">
+        <label for="room-phone-number-input">전화번호</label>
+        <input id="room-phone-number-input" type="tel" maxlength="30" autocomplete="tel" placeholder="예: 010-1234-5678">
       </div>
       <div class="field">
         <label for="room-move-in-date-input">입주일</label>
@@ -847,6 +851,7 @@
     const roomSettingsForm = document.getElementById("room-settings-form");
     const roomSettingsNumber = document.getElementById("room-settings-number");
     const roomResidentNameInput = document.getElementById("room-resident-name-input");
+    const roomPhoneNumberInput = document.getElementById("room-phone-number-input");
     const roomMoveInDateInput = document.getElementById("room-move-in-date-input");
     const roomDepositInput = document.getElementById("room-deposit-input");
     const roomMonthlyRentInput = document.getElementById("room-monthly-rent-input");
@@ -913,6 +918,7 @@
       const profile = roomProfiles[roomNumber];
       if (!profile) return [];
       const details = [];
+      if (profile.phoneNumber) details.push(`전화 ${profile.phoneNumber}`);
       if (profile.moveInDate) {
         const [year, month, day] = profile.moveInDate.split("-").map(Number);
         details.push(`입주 ${year}년 ${month}월 ${day}일`);
@@ -1054,8 +1060,12 @@
           throw new Error("공동 달력에 올바르지 않은 호실 설정이 있습니다.");
         }
         const residentName = String(row.resident_name || "");
+        const phoneNumber = String(row.phone_number || "");
         if (residentName.length > 80) {
           throw new Error(`${roomNumber} 거주자 이름이 너무 깁니다.`);
+        }
+        if (phoneNumber.length > 30) {
+          throw new Error(`${roomNumber} 전화번호가 너무 깁니다.`);
         }
         if (row.move_in_date !== null && !isValidDateKey(row.move_in_date)) {
           throw new Error(`${roomNumber} 입주일이 올바르지 않습니다.`);
@@ -1070,6 +1080,7 @@
         }
         nextRoomProfiles[roomNumber] = {
           residentName,
+          phoneNumber,
           moveInDate: row.move_in_date,
           depositAmount,
           monthlyRent
@@ -1095,7 +1106,7 @@
     async function refreshRoomProfiles() {
       const { data, error } = await supabaseClient
         .from("shared_calendar_rooms")
-        .select("room_number, resident_name, move_in_date, deposit_amount, monthly_rent")
+        .select("room_number, resident_name, phone_number, move_in_date, deposit_amount, monthly_rent")
         .order("room_number", { ascending: true });
       if (error) throw error;
       if (!Array.isArray(data)) throw new Error("공동 데이터베이스에서 호실 설정을 받지 못했습니다.");
@@ -1173,11 +1184,13 @@
     function fillRoomSettingsForm() {
       const profile = roomProfiles[roomSettingsNumber.value] || {
         residentName: "",
+        phoneNumber: "",
         moveInDate: null,
         depositAmount: null,
         monthlyRent: null
       };
       roomResidentNameInput.value = profile.residentName;
+      roomPhoneNumberInput.value = profile.phoneNumber;
       roomMoveInDateInput.value = profile.moveInDate || "";
       roomDepositInput.value = profile.depositAmount === null ? "" : String(profile.depositAmount / 10000);
       roomMonthlyRentInput.value = profile.monthlyRent === null ? "" : String(profile.monthlyRent / 10000);
@@ -1219,7 +1232,7 @@
         if (!Array.isArray(data)) throw new Error("공동 달력에서 내역 목록을 받지 못했습니다.");
         const { data: roomData, error: roomError } = await client
           .from("shared_calendar_rooms")
-          .select("room_number, resident_name, move_in_date, deposit_amount, monthly_rent")
+          .select("room_number, resident_name, phone_number, move_in_date, deposit_amount, monthly_rent")
           .order("room_number", { ascending: true });
         if (roomError) throw roomError;
         if (!Array.isArray(roomData)) throw new Error("공동 데이터베이스에서 호실 설정을 받지 못했습니다.");
@@ -1306,6 +1319,7 @@
       event.preventDefault();
       const roomNumber = roomSettingsNumber.value;
       const residentName = roomResidentNameInput.value.trim();
+      const phoneNumber = roomPhoneNumberInput.value.trim();
       const moveInDate = roomMoveInDateInput.value || null;
       const parseAmount = (input, label) => {
         const value = input.value.trim();
@@ -1325,6 +1339,7 @@
       try {
         if (!roomNumbers.includes(roomNumber)) throw new Error("호실을 선택해 주세요.");
         if (residentName.length > 80) throw new Error("이름은 80자 이내로 입력해 주세요.");
+        if (phoneNumber.length > 30) throw new Error("전화번호는 30자 이내로 입력해 주세요.");
         if (moveInDate && !isValidDateKey(moveInDate)) throw new Error("올바른 입주일을 선택해 주세요.");
         depositAmount = parseAmount(roomDepositInput, "보증금");
         monthlyRent = parseAmount(roomMonthlyRentInput, "월세");
@@ -1333,7 +1348,7 @@
         return;
       }
 
-      const profile = { residentName, moveInDate, depositAmount, monthlyRent };
+      const profile = { residentName, phoneNumber, moveInDate, depositAmount, monthlyRent };
       roomSettingsSaveButton.disabled = true;
       setRoomSettingsMessage("호실 정보를 저장하는 중입니다.");
       try {
@@ -1342,6 +1357,7 @@
           .upsert({
             room_number: roomNumber,
             resident_name: residentName,
+            phone_number: phoneNumber,
             move_in_date: moveInDate,
             deposit_amount: depositAmount,
             monthly_rent: monthlyRent,
@@ -1756,6 +1772,9 @@
 
     function getRoomSearchText(roomNumber, profile) {
       const values = [roomNumber, profile.residentName];
+      if (profile.phoneNumber) {
+        values.push("전화번호", profile.phoneNumber, profile.phoneNumber.replace(/\D/g, ""));
+      }
       if (profile.moveInDate) {
         const [year, month, day] = profile.moveInDate.split("-").map(Number);
         values.push(
@@ -1809,7 +1828,13 @@
       }
 
       const profileMatches = Object.entries(roomProfiles)
-        .filter(([roomNumber, profile]) => getRoomSearchText(roomNumber, profile).includes(query))
+        .filter(([roomNumber, profile]) => {
+          const phoneDigits = profile.phoneNumber.replace(/\D/g, "");
+          const queryDigits = query.replace(/\D/g, "");
+          const isPhoneQuery = /^[\d\s()+.-]+$/.test(query) && queryDigits.length > 0;
+          return getRoomSearchText(roomNumber, profile).includes(query)
+            || (isPhoneQuery && phoneDigits.includes(queryDigits));
+        })
         .map(([roomNumber, profile]) => ({ roomNumber, profile }));
       const matches = [];
       Object.entries(events).forEach(([key, dayEvents]) => {
