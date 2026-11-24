@@ -126,6 +126,10 @@
     .room-select-button { min-width: 0; min-height: 36px; padding: 5px 3px; border: 1px solid #34445b; border-radius: 8px; color: #dce5f2; background: #172438; font: inherit; font-size: 13px; font-weight: 600; }
     .room-select-button:hover { border-color: #7169e8; background: #202c43; }
     .room-select-button[aria-pressed="true"] { border-color: var(--purple); color: #fff; background: #4a467b; }
+    .room-select-button.has-income:not([aria-pressed="true"]) { border-color: #287c64; color: #88f0c5; background: #163b36; }
+    .room-select-button.has-income[aria-pressed="true"] { border-color: #55d6a4; color: #fff; background: #28634f; }
+    .room-income-legend { margin: 0 0 8px; color: var(--muted); font-size: 12px; }
+    .room-income-legend span { margin-right: 5px; color: #55d6a4; }
     .room-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr)); gap: 12px; }
     .room-card { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #172438; }
     .room-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -626,6 +630,7 @@
         <div class="calendar-grid" id="weekday-row" aria-hidden="true"></div>
         <div class="calendar-grid" id="calendar-grid"></div>
         <section class="room-mode-view" id="room-mode-view" aria-label="이번 달 호실별 내역" hidden>
+          <p class="room-income-legend"><span aria-hidden="true">●</span>이번 달 수입이 있는 호실</p>
           <div class="room-select-grid" id="room-select-grid" role="group" aria-label="전체 또는 호실 선택"></div>
           <div class="room-card-grid" id="room-card-grid"></div>
         </section>
@@ -728,10 +733,10 @@
         </select>
       </div>
       <div class="field">
-        <label id="event-title-label" for="event-title-button">내용</label>
+        <label id="event-title-label" for="event-title-button">호실</label>
         <input id="event-title" name="title" type="hidden">
         <button class="content-select-button" id="event-title-button" type="button" role="combobox" aria-labelledby="event-title-label event-title-value" aria-haspopup="listbox" aria-expanded="false" aria-controls="event-title-menu">
-          <span id="event-title-value">내용을 선택해 주세요</span>
+          <span id="event-title-value">호실을 선택해 주세요</span>
           <span aria-hidden="true">⌄</span>
         </button>
         <div id="event-title-menu" role="listbox" aria-labelledby="event-title-label" hidden></div>
@@ -1594,19 +1599,28 @@
 
     function renderRoomView() {
       initializeRoomSelector();
-      roomSelectGrid.querySelectorAll(".room-select-button").forEach((button) => {
-        button.setAttribute("aria-pressed", String(button.dataset.room === selectedRoomView));
-      });
       const monthPrefix = `${visibleMonth.getFullYear()}-${pad(visibleMonth.getMonth() + 1)}-`;
       const grouped = new Map();
       const roomNames = contentOptions.filter((name) => name !== "기타");
+      const incomeRooms = new Set();
       Object.entries(events).forEach(([key, dayEvents]) => {
         if (!key.startsWith(monthPrefix) || !Array.isArray(dayEvents)) return;
         dayEvents.forEach((event) => {
           const roomName = roomNames.includes(event.title) ? event.title : "기타";
           if (!grouped.has(roomName)) grouped.set(roomName, []);
           grouped.get(roomName).push({ key, event });
+          if (roomName !== "기타" && event.type === "income"
+            && Number.isSafeInteger(event.amount) && event.amount > 0) {
+            incomeRooms.add(roomName);
+          }
         });
+      });
+      roomSelectGrid.querySelectorAll(".room-select-button").forEach((button) => {
+        const hasIncome = incomeRooms.has(button.dataset.room);
+        button.setAttribute("aria-pressed", String(button.dataset.room === selectedRoomView));
+        button.classList.toggle("has-income", hasIncome);
+        if (hasIncome) button.setAttribute("aria-label", `${button.dataset.room}, 이번 달 수입 있음`);
+        else button.removeAttribute("aria-label");
       });
 
       roomCardGrid.replaceChildren();
@@ -2240,7 +2254,7 @@
       eventForm.reset();
       eventDateInput.value = dateKey(selectedDate);
       eventTitleSelect.value = "";
-      eventTitleValue.textContent = "내용을 선택해 주세요";
+      eventTitleValue.textContent = "호실을 선택해 주세요";
       eventFormHeading.textContent = "새 내역";
       eventSaveButton.textContent = "저장";
       eventTitleMenu.querySelectorAll(".content-option").forEach((option) => {
@@ -2393,7 +2407,7 @@
       const amountRequired = selectedTitle !== "기타"
         && !(editingEvent && !Number.isSafeInteger(editingEvent.event.amount));
       if (!selectedTitle) {
-        eventValidationMessage.textContent = "내용을 선택해 주세요.";
+        eventValidationMessage.textContent = "호실을 선택해 주세요.";
         eventValidationMessage.hidden = false;
         eventTitleButton.focus();
         return;
