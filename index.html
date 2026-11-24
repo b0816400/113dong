@@ -645,7 +645,7 @@
                 <option value="all">전체 호실</option>
                 <option value="201호">201호</option><option value="202호">202호</option><option value="203호">203호</option><option value="204호">204호</option><option value="205호">205호</option>
                 <option value="301호">301호</option><option value="302호">302호</option><option value="303호">303호</option><option value="304호">304호</option><option value="305호">305호</option>
-                <option value="401호">401호</option><option value="402호">402호</option><option value="403호">403호</option><option value="404호">404호</option><option value="405호">405호</option>
+                <option value="401호">401호</option><option value="402호">402호</option><option value="403호">403호</option><option value="405호">405호</option><option value="406호">406호</option>
               </select>
             </div>
             <div class="history-filter">
@@ -742,8 +742,8 @@
       </div>
       <p class="storage-hint" id="other-help" hidden>기타 내용, 금액, 메모 중 하나는 입력해 주세요.</p>
       <div class="field">
-        <label for="event-amount">금액 (원)</label>
-        <input id="event-amount" name="amount" type="number" min="1" max="999999999999" step="1" required placeholder="예: 12000">
+        <label for="event-amount">금액 (만원)</label>
+        <input id="event-amount" name="amount" type="number" min="0.0001" max="99999999.9999" step="0.0001" inputmode="decimal" required placeholder="예: 1.2">
       </div>
       <div class="field">
         <label for="event-notes">메모 (선택)</label>
@@ -875,7 +875,7 @@
     const contentOptions = [
       "201호", "202호", "203호", "204호", "205호",
       "301호", "302호", "303호", "304호", "305호",
-      "401호", "402호", "403호", "404호", "405호", "기타"
+      "401호", "402호", "403호", "405호", "406호", "기타"
     ];
     const roomNumbers = contentOptions.filter((value) => value !== "기타");
     roomNumbers.forEach((roomNumber) => {
@@ -2122,7 +2122,7 @@
       eventTitleSelect.value = selectedTitle;
       eventTitleValue.textContent = selectedTitle;
       otherTitleInput.value = selectedTitle === "기타" && event.title !== "기타" ? event.title : "";
-      eventAmountInput.value = Number.isSafeInteger(event.amount) ? String(event.amount) : "";
+      eventAmountInput.value = Number.isSafeInteger(event.amount) ? String(event.amount / 10000) : "";
       eventForm.elements.notes.value = event.notes || "";
       eventTitleMenu.querySelectorAll(".content-option").forEach((option) => {
         option.setAttribute("aria-selected", String(option.dataset.value === selectedTitle));
@@ -2263,7 +2263,7 @@
       otherHelp.hidden = !isOther;
       otherTitleInput.required = false;
       eventAmountInput.required = !isOther && !editingMemo;
-      eventAmountLabel.textContent = isOther || editingMemo ? "금액 (원, 선택)" : "금액 (원)";
+      eventAmountLabel.textContent = isOther || editingMemo ? "금액 (만원, 선택)" : "금액 (만원)";
     }
 
     function positionContentMenu() {
@@ -2380,7 +2380,16 @@
       const otherTitle = String(formData.get("other-title") || "").trim();
       const amountText = String(formData.get("amount") || "").trim();
       const notes = String(formData.get("notes") || "").trim();
-      const amount = amountText ? Number(amountText) : null;
+      const amountInTenThousands = amountText ? Number(amountText) : null;
+      const amountInWon = amountInTenThousands === null ? null : amountInTenThousands * 10000;
+      const roundedAmountInWon = amountInWon === null ? null : Math.round(amountInWon);
+      const validAmount = amountInTenThousands === null
+        || (Number.isFinite(amountInWon)
+          && amountInTenThousands > 0
+          && amountInTenThousands <= 99999999.9999
+          && Number.isSafeInteger(roundedAmountInWon)
+          && Math.abs(amountInWon - roundedAmountInWon) <= 0.0001);
+      const amount = validAmount ? roundedAmountInWon : null;
       const amountRequired = selectedTitle !== "기타"
         && !(editingEvent && !Number.isSafeInteger(editingEvent.event.amount));
       if (!selectedTitle) {
@@ -2395,14 +2404,14 @@
         otherTitleInput.focus();
         return;
       }
-      if (amountRequired && (!Number.isSafeInteger(amount) || amount <= 0)) {
-        eventValidationMessage.textContent = "올바른 금액을 입력해 주세요.";
+      if (amountText && (!validAmount || !Number.isSafeInteger(amount) || amount <= 0)) {
+        eventValidationMessage.textContent = "금액은 0.0001만원 단위로 입력해 주세요. (예: 1.2)";
         eventValidationMessage.hidden = false;
         eventAmountInput.focus();
         return;
       }
-      if (amountText && (!Number.isSafeInteger(amount) || amount <= 0)) {
-        eventValidationMessage.textContent = "금액은 1원 이상의 정수로 입력해 주세요.";
+      if (amountRequired && (!Number.isSafeInteger(amount) || amount <= 0)) {
+        eventValidationMessage.textContent = "금액을 만원 단위로 입력해 주세요. (예: 1.2)";
         eventValidationMessage.hidden = false;
         eventAmountInput.focus();
         return;
